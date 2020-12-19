@@ -1,5 +1,15 @@
 extends KinematicBody
 
+
+const H_LOOK_SENS = 0.5
+const V_LOOK_SENS = 0.5
+
+onready var cam = $CamBase
+onready var Pause = $pause
+onready var Resume = $"pause/button_holder/main_buttons/Resume"
+onready var Exit = $"pause/button_holder/main_buttons/Exit"
+onready var tree = get_tree()
+
 var cmd = {
 	forward_move 	= 0.0,
 	right_move 		= 0.0,
@@ -12,7 +22,7 @@ export var gravity = 20
 
 export var friction = 6.0
 
-export var move_speed = 15.0
+export var move_speed = 10.0
 export var run_acceleration = 14.0
 export var run_deacceleration = 10.0
 export var air_acceleration = 2.0
@@ -23,19 +33,22 @@ export var side_strafe_speed = 1.0
 export var jump_speed = 8.0
 export var move_scale = 1.0
 
-export var ground_snap_tolerance = 1
+export var ground_snap_tolerance = 0.1
 
 var move_direction_norm = Vector3()
 var player_velocity = Vector3()
 
 var up = Vector3(0,1,0)
 
-var wish_jump = false;
+var wish_jump = false
 
-var touching_ground = false;
+var touching_ground = false
+
+var allow_mouse_look = 1
 
 func _ready():
 	set_physics_process(true)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _physics_process(delta):
 	queue_jump()
@@ -223,6 +236,23 @@ func cmd_scale():
 	
 	return scale
 
-func _input(ev):
-	if (ev is InputEventMouseMotion):
-		rotate_y(-deg2rad(ev.relative.x) * x_mouse_sensitivity)
+func _input(event):
+	if event is InputEventMouseMotion and allow_mouse_look == 1:
+		cam.rotation_degrees.x -= event.relative.y * V_LOOK_SENS
+		cam.rotation_degrees.x = clamp(cam.rotation_degrees.x, -90, 90)
+		rotation_degrees.y -= event.relative.x * H_LOOK_SENS
+		
+	if Input.is_action_just_pressed("pause_menu"):
+		allow_mouse_look = 0
+		Pause.visible = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _on_Resume_pressed():
+	Pause.visible = false
+	allow_mouse_look = 1
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+func _on_Exit_pressed():
+	tree.quit()
